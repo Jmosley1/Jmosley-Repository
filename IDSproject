@@ -1,1 +1,147 @@
+class IDS
+{
+    static Random random = new Random();
+
+    static List<string> usernames = new List<string> { "jhardy", "jcena", "rorton", "admin", "guest" };
+    static List<string> passwords = new List<string> { "lebronisthegoat", "P@ssw0rd", "1l0vemeta", "donkeykong", "ilovemyd0g" };
+
+    // Track failed login attempts per IP
+    static Dictionary<string, int> failedLoginCounts = new Dictionary<string, int>();
+
+    static void Main()
+    {
+        Console.WriteLine(" Intrusion Detection System Sim ");
+        Console.WriteLine("Timestamp,ThreatType,IP,Username,Password,Details");
+
+        // Continuous loop
+        while (true)
+        {
+            string ip = GenerateIP();
+            string user = usernames[random.Next(usernames.Count)];
+            string pass = passwords[random.Next(passwords.Count)];
+
+            string threat = DetermineThreatType(ip, user);
+            string log = GenerateCSVLog(threat, ip, user, pass);
+            DisplayLog(threat, log);
+
+            Thread.Sleep(3000); // Simulate real-time log frequency
+        }
+    }
+
+    static string GenerateIP()
+    {
+        return $"192.168.{random.Next(0, 256)}.{random.Next(0, 256)}";
+    }
+
+    static string DetermineThreatType(string ip, string user)
+    {
+        int roll = random.Next(100);
+
+        if (roll < 40) // 40% chance for normal traffic
+        {
+            bool isFailedLogin = random.Next(100) < 30;
+
+            if (isFailedLogin)
+            {
+                if (!failedLoginCounts.ContainsKey(ip))
+                    failedLoginCounts[ip] = 0;
+
+                failedLoginCounts[ip]++;
+                return "Failed Login";
+            }
+            else
+            {
+                if (failedLoginCounts.ContainsKey(ip) && failedLoginCounts[ip] >= 3)
+                {
+                    failedLoginCounts[ip] = 0; // Reset after flagging
+                    return "Brute Force Success";
+                }
+
+                return "Normal";
+            }
+        }
+        else if (roll < 70) // 30% chance for Web/Email traffic
+        {
+            // Adds web and email traffic
+            int trafficType = random.Next(100);
+
+            if (trafficType < 50)
+            {
+                return "Web Browsing";
+            }
+            else
+            {
+                return "Email Traffic";
+            }
+        }
+        else // 30% chance for attacks (Malware, Phishing, Spoofing, etc.)
+        {
+            return new List<string> { "Malware", "Phishing", "Spoofing" }[random.Next(3)];
+        }
+    }
+
+    static string GenerateCSVLog(string threat, string ip, string user, string pass)
+    {
+        string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+        switch (threat)
+        {
+            case "Normal":
+                return $"{timestamp},{threat},{ip},{user},LOGIN SUCCESS";
+            case "Failed Login":
+                return $"{timestamp},{threat},{ip},{user},{pass},LOGIN FAILED";
+            case "Brute Force Success":
+                return $"{timestamp},{threat},{ip},{user},{pass},BRUTE FORCE POSSIBLY SUCCESSFUL";
+            case "Web Browsing":
+                string[] websites = { "google.com", "youtube.com", "linkedin.com" };
+                string site = websites[random.Next(websites.Length)];
+                return $"{timestamp},{threat},{ip},{user},,HTTP/HTTPS request to {site}";
+            case "Email Traffic":
+                string[] actions = { "checked inbox", "sent email", "read message", "connected to smtp.office365.com" };
+                string action = actions[random.Next(actions.Length)];
+                return $"{timestamp},{threat},{ip},{user},,Email traffic: {action}";
+            case "Malware":
+                return $"{timestamp},{threat},{ip},MALWARE DETECTED (trojan.exe)";
+            case "Phishing":
+                return $"{timestamp},{threat},{ip},{user},CLICKED PHISHING LINK (http://fakebook.com)";
+            case "Spoofing":
+                return $"{timestamp},{threat},{ip},SPOOFING: Claimed IP 127.0.0.1";
+            default:
+                return $"{timestamp},Unknown,{ip},UNKNOWN EVENT";
+        }
+    }
+
+    static void DisplayLog(string threat, string csvLog)
+    {
+        switch (threat)
+        {
+            case "Normal":
+                Console.ForegroundColor = ConsoleColor.White;
+                break;
+            case "Failed Login":
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                break;
+            case "Brute Force Success":
+                Console.ForegroundColor = ConsoleColor.Red;
+                break;
+            case "Phishing":
+            case "Spoofing":
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                break;
+            case "Malware":
+                Console.ForegroundColor = ConsoleColor.Red;
+                break;
+            case "Web Browsing":
+                Console.ForegroundColor = ConsoleColor.White;
+                break;
+            case "Email Traffic":
+                Console.ForegroundColor = ConsoleColor.White;
+                break;
+            default:
+                Console.ResetColor();
+                break;
+        }
+
+        Console.WriteLine(csvLog);
+    }
 
