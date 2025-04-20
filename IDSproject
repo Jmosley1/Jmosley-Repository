@@ -5,7 +5,7 @@ class IDS
     static List<string> usernames = new List<string> { "jhardy", "jcena", "rorton", "admin", "guest" };
     static List<string> passwords = new List<string> { "lebronisthegoat", "P@ssw0rd", "1l0vemeta", "donkeykong", "ilovemyd0g" };
 
-    // Track failed login attempts per IP
+    // Tracks failed login attempts IP
     static Dictionary<string, int> failedLoginCounts = new Dictionary<string, int>();
 
     static void Main()
@@ -13,7 +13,6 @@ class IDS
         Console.WriteLine(" Intrusion Detection System Sim ");
         Console.WriteLine("Timestamp,ThreatType,IP,Username,Password,Details");
 
-        // Continuous loop
         while (true)
         {
             string ip = GenerateIP();
@@ -24,7 +23,7 @@ class IDS
             string log = GenerateCSVLog(threat, ip, user, pass);
             DisplayLog(threat, log);
 
-            Thread.Sleep(3000); // Simulate real-time log frequency
+            Thread.Sleep(3000); // Simulates the log frequency
         }
     }
 
@@ -37,7 +36,7 @@ class IDS
     {
         int roll = random.Next(100);
 
-        if (roll < 40) // 40% chance for normal traffic
+        if (roll < 40) // 40% chance for normal traffic to appear
         {
             bool isFailedLogin = random.Next(100) < 30;
 
@@ -53,14 +52,14 @@ class IDS
             {
                 if (failedLoginCounts.ContainsKey(ip) && failedLoginCounts[ip] >= 3)
                 {
-                    failedLoginCounts[ip] = 0; // Reset after flagging
+                    failedLoginCounts[ip] = 0; // Resets after flagging
                     return "Brute Force Success";
                 }
 
                 return "Normal";
             }
         }
-        else if (roll < 70) // 30% chance for Web/Email traffic
+        else if (roll < 70) // 30% chance for Web/Email traffic to appear
         {
             // Adds web and email traffic
             int trafficType = random.Next(100);
@@ -74,7 +73,7 @@ class IDS
                 return "Email Traffic";
             }
         }
-        else // 30% chance for attacks (Malware, Phishing, Spoofing, etc.)
+        else // 30% chance for attacks to appear
         {
             return new List<string> { "Malware", "Phishing", "Spoofing" }[random.Next(3)];
         }
