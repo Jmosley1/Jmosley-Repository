@@ -1,0 +1,134 @@
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+
+class Program
+{
+    static async Task Main()
+    {
+        Console.WriteLine(" IOC Checker ");
+        Console.Write("Enter a URL or IP: ");
+        string input = Console.ReadLine();
+
+        var results = new List<string>();
+
+        if (await CheckVirusTotal(input)) results.Add("malicious");
+        if (await CheckTalos(input)) results.Add("malicious");
+        if (await CheckAbuseIPDB(input)) results.Add("malicious");
+        if (await CheckURLHaus(input)) results.Add("malicious");
+
+        string finalResult = "not found";
+
+        if (results.Contains("malicious"))
+            finalResult = "malicious";
+        else if (results.Count == 0)
+            finalResult = "not found";
+        else
+            finalResult = "suspicious (check manually)";
+
+        // Color-coded result
+        switch (finalResult)
+        {
+            case "malicious":
+                Console.ForegroundColor = ConsoleColor.Red;
+                break;
+            case "suspicious (check manually)":
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                break;
+            default:
+                Console.ForegroundColor = ConsoleColor.Gray;
+                break;
+        }
+
+        Console.WriteLine($"Result for {input} => {finalResult}");
+        Console.ResetColor();
+        Console.WriteLine("Done. Press any key to exit.");
+        Console.ReadKey();
+    }
+
+    static async Task<bool> CheckVirusTotal(string input)
+    {
+        try
+        {
+            string apiKey = "dd2052c559e8cdfa575f70ec786d8553a8be18a7d5c274de3f7af6be83bf0312";
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("x-apikey", apiKey);
+
+            // Step 1: Submit the URL or IP
+            var values = new Dictionary<string, string> { { "url", input } };
+            var content = new FormUrlEncodedContent(values);
+            var submitResponse = await client.PostAsync("https://www.virustotal.com/api/v3/urls", content);
+            var submitContent = await submitResponse.Content.ReadAsStringAsync();
+            dynamic submittedJson = JsonConvert.DeserializeObject(submitContent);
+            string analysisId = submittedJson?.data?.id;
+
+            if (string.IsNullOrEmpty(analysisId))
+                return false;
+
+            // Step 2: Retrieve the analysis result
+            await Task.Delay(2000); // slight delay to allow analysis
+            var resultResponse = await client.GetAsync($"https://www.virustotal.com/api/v3/analyses/{analysisId}");
+            var resultContent = await resultResponse.Content.ReadAsStringAsync();
+            dynamic resultJson = JsonConvert.DeserializeObject(resultContent);
+
+            int malicious = resultJson?.data?.attributes?.stats?.malicious ?? 0;
+            return malicious > 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    static async Task<bool> CheckTalos(string input)
+    {
+        try
+        {
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
+            var response = await client.GetStringAsync($"https://talosintelligence.com/sb_api/query_lookup?query={input}&query_type=ip&offset=0");
+
+            return response.Contains("\"reputation\":\"Malicious\"") || response.Contains("\"reputation\":\"Untrusted\"");
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    static async Task<bool> CheckAbuseIPDB(string input)
+    {
+        try
+        {
+            string apiKey = "2f797030ebade2adee29f3d009e6f0809bd532e8f64d771f36aa98280679c2751fc0b605553994ac";
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("Key", apiKey);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            var response = await client.GetAsync($"https://api.abuseipdb.com/api/v2/check?ipAddress={input}&maxAgeInDays=90");
+            var content = await response.Content.ReadAsStringAsync();
+            dynamic json = JsonConvert.DeserializeObject(content);
+            return json.data.abuseConfidenceScore > 50;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    static async Task<bool> CheckURLHaus(string input)
+    {
+        try
+        {
+            using var client = new HttpClient();
+            var feed = await client.GetStringAsync("https://urlhaus.abuse.ch/downloads/csv_recent/");
+            return feed.Contains(input);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+}
+
