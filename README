@@ -1,0 +1,8 @@
+I made this tool to save time and improve efficiency for SOC analysts and cybersecurity professionals by automating the process of checking IOCs (URLs and IPs) across multiple threat intelligence sources in one place. 
+Instead of manually checking each source, this tool simplifies the process and provides quick, accurate results, making it easier for users to assess potential threats.
+Instead of opening tabs and pasting IOCs into multiple sites, this tool pulls results from VirusTotal, AbuseIPDB, Cisco Talos Intelligence, and URLHaus, then returns a single verdict.
+It includes a color coded output if it finds any IP or URL malicioius. 
+Queries multiple IOC sources in one. 
+If nothing is flagged it returns not found.
+If nothing is flagged but there is activity it returns suspicious
+If it any service flags it malicious it returns malicious in red. 
